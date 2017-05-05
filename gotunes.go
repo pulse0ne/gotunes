@@ -40,9 +40,6 @@ func main() {
 		os.Exit(0)
 	}()
 
-	line := ""
-	line1 := ""
-
 	attrs, err := conn.ListAllInfo("/")
 	if err != nil {
 		log.Fatalln(err)
@@ -59,6 +56,9 @@ func main() {
 	if err2 != nil {
 		log.Fatalln(err2)
 	}
+
+	line := ""
+	line1 := ""
 
 	for {
 		status, err := conn.Status()
