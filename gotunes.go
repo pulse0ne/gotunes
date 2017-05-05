@@ -46,7 +46,7 @@ func main() {
 	}
 
 	for _, v := range attrs {
-		fmt.Println(v["file"])
+		fmt.Println(v)
 		if err := conn.Add(v["file"]); err != nil {
 			log.Fatalln("Could not add a file")
 		}
