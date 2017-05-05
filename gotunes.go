@@ -2,16 +2,50 @@ package main
 
 import (
 	"fmt"
-	"github.com/fhs/gompd/mpd"
+	"github.com/gorilla/websocket"
+	"github.com/pulse0ne/gompd/mpd"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
 	"time"
 )
 
-func main() {
+func fileserve() {
+	log.Fatalln(http.ListenAndServe(":9999", http.FileServer(http.Dir("./public"))))
+}
 
+func attachExitHook(hook func(ch chan os.Signal)) {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, os.Kill)
+	go hook(c)
+}
+
+var wsUpgrader = websocket.Upgrader{}
+
+func wsHandler(w http.ResponseWriter, r *http.Request) {
+	c, err := wsUpgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println("could not upgrade connection:", err)
+		return
+	}
+
+	defer c.Close()
+
+	for {
+		mt, msg, err := c.ReadMessage()
+		if err != nil {
+			log.Println("could not read message:", err)
+			break
+		}
+		if mt == websocket.TextMessage {
+			fmt.Printf("WS received: %s\n", msg)
+		}
+	}
+}
+
+func main() {
 	var conn *mpd.Client
 
 	conn, err := mpd.Dial("tcp", "localhost:6600")
@@ -31,14 +65,17 @@ func main() {
 	}
 
 	// hook for interrupt
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		<-c
+	attachExitHook(func(c chan os.Signal) {
+		<-c // wait for the signal
 		conn.Stop()
 		conn.Close()
 		os.Exit(0)
-	}()
+	})
+
+	// start the fileserver
+	go fileserve()
+
+	http.HandleFunc("/websocket", wsHandler)
 
 	attrs, err := conn.ListAllInfo("/")
 	if err != nil {
