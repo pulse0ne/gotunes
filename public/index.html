@@ -1,10 +1,66 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" ng-app="gotunes" ng-controller="gotunes.controller.main">
 <head>
     <meta charset="UTF-8">
-    <title>Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>gotunes</title>
+
+    <link rel="stylesheet" href="lib/vendor/material/angular-material.min.css">
+    <link rel="stylesheet" href="lib/vendor/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="lib/vendor/slider/nouislider.min.css">
+    <link rel="stylesheet" href="assets/gotunes.css">
+
+    <base href="/">
 </head>
-<body>
-<h1>Test</h1>
+<body ng-cloak>
+<div id="main">
+    <div ng-view class="view {{viewClass}}"></div>
+</div>
+
+<div id="sticky-footer" layout="column" ng-class="{shadow: !showStatusBar}">
+    <div id="status-bar" ng-if="showStatusBar" layout="row" layout-align="center center"><span>{{statusBarText}}</span></div>
+    <div layout="row" layout-align="space-around center">
+        <div class="control-container">
+            <div id="prev-ctrl" class="clickable" ng-include="'assets/prev.svg'" ng-click="playPrevious()"></div>
+            <div id="play-ctrl" class="clickable" ng-include="'assets/play.svg'" ng-click="togglePlaystate()"></div>
+            <div id="next-ctrl" class="clickable" ng-include="'assets/next.svg'" ng-click="playNext()"></div>
+        </div>
+        <n-track-slider total="nowplaying.time.total" current="nowplaying.time.current" on-seek="onSeek"></n-track-slider>
+        <div id="slider"></div>
+    </div>
+</div>
+
+<!-- jquery -->
+<script src="lib/vendor/jquery/jquery.min.js"></script>
+
+<!-- angular -->
+<script src="lib/vendor/angular/angular.min.js"></script>
+<script src="lib/vendor/angular/angular-aria.min.js"></script>
+<script src="lib/vendor/angular/angular-animate.min.js"></script>
+<script src="lib/vendor/angular/angular-resource.min.js"></script>
+<script src="lib/vendor/angular/angular-route.min.js"></script>
+
+<!-- material -->
+<script src="lib/vendor/material/angular-material.min.js"></script>
+
+<!-- moment -->
+<script src="lib/vendor/moment/moment.min.js"></script>
+
+<!-- fit text -->
+<script src="lib/ngFitText.js"></script>
+
+<!-- noui slider -->
+<script src="lib/vendor/slider/nouislider.min.js"></script>
+
+<!-- other lib -->
+<script src="lib/websocket.js"></script>
+<script src="lib/slider.js"></script>
+<script src="lib/ngIdle.js"></script>
+<script src="enums.js"></script>
+
+<!-- app -->
+<script src="app.js"></script>
+<script src="views/nav/nav.js"></script>
+<script src="views/idle/idle.js"></script>
 </body>
 </html>

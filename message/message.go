@@ -1,4 +1,4 @@
-package main
+package message
 
 import "encoding/json"
 
@@ -7,7 +7,8 @@ import "encoding/json"
 type MessageType int
 
 const (
-	NOW_PLAYING MessageType = iota
+	_ MessageType = iota
+	NOW_PLAYING
 	VIEW_UPDATE
 	COMMAND
 )
@@ -17,7 +18,8 @@ const (
 type PlayState int
 
 const (
-	STOPPED PlayState = iota
+	_ PlayState = iota
+	STOPPED
 	PLAYING
 	PAUSED
 )
@@ -27,16 +29,35 @@ const (
 type Command int
 
 const (
-	SET_PLAYSTATE Command = iota
+	_ Command = iota
+	SET_PLAYSTATE
 	SEEK_TO
 	PLAY_NEXT
 	PLAY_PREV
+	PLAY_FROM_CONTEXT
 	SET_VOLUME
 	SET_CONTEXT
 	REQUEST_VIEW
 	NEW_PLAYLIST
 	SAVE_PLAYLIST
 	ADD_TO_PLAYLIST
+	SET_SHUFFLE
+	SET_REPEAT_MODE
+)
+
+//==================================
+// ContextType enum
+type ContextType int
+
+const (
+	_ ContextType = iota
+	ALL_ARTISTS
+	ARTIST_DETAIL
+	ALL_ALBUMS
+	ALBUM_DETAIL
+	ALL_TRACKS
+	PLAYLIST
+	PLAYLIST_DETAIL
 )
 
 //==================================
@@ -44,25 +65,21 @@ const (
 type RepeatMode int
 
 const (
-	OFF RepeatMode = iota
+	_ RepeatMode = iota
+	OFF
 	ALL
 	ONE
 )
 
 //==================================
-// Message contains all messages passed between client and server
-type Message struct {
-	MType   MessageType
-	Payload interface{}
+// WsMessage contains all messages passed between client and server
+type WsMessage struct {
+	ClientId string      `json:"-"`
+	MType    MessageType `json:"type"`
+	Payload  interface{} `json:"payload"`
 }
 
-func NewMessage(m MessageType) *Message {
-	return &Message{
-		MType: m,
-	}
-}
-
-func (m *Message) ToJsonBytes() ([]byte, error) {
+func ToJsonBytes(m *WsMessage) ([]byte, error) {
 	b, err := json.Marshal(m)
 	if err != nil {
 		return []byte{}, err
@@ -70,8 +87,8 @@ func (m *Message) ToJsonBytes() ([]byte, error) {
 	return b, nil
 }
 
-func FromJsonBytes(b []byte) (Message, error) {
-	m := Message{}
+func FromJsonBytes(b []byte) (*WsMessage, error) {
+	m := &WsMessage{}
 	err := json.Unmarshal(b, m)
 	if err != nil {
 		return m, err
