@@ -89,7 +89,7 @@
             const enums = window.enums || {};
             const Command = enums.Command || {};
             const PlayState = $scope.ps = enums.PlayState || {};
-            const ContextType = $scope.context = enums.ContextType || {};
+            const ViewType = $scope.vt = enums.ViewType || {};
             const MessageType = enums.MessageType || {};
             const unicodePlay = '\u25B6 ';
 
@@ -133,16 +133,16 @@
 
             $scope.$watch('nowplaying.track', function (nv, ov) {
                 let track = $scope.nowplaying.track;
-                if (!nv || (!track.artist && !track.title && !track.filename)) {
-                    $document[0].title = 'gotunes';
-                    $rootScope.showStatusBar = false;
-                } else if (nv !== ov) {
+                if (nv && nv !== ov && $location.path() !== '/idle') {
                     let artist = track.artist || 'Unknown';
                     let song = track.title || track.filename || 'Unknown';
                     let ps = $document[0].title.substring(0, 1) === unicodePlay ? unicodePlay : '';
                     $document[0].title = ps + '"' + song + '" by ' + artist;
                     $rootScope.showStatusBar = true;
                     $rootScope.statusBarText = '"' + song + '" by ' + artist;
+                } else {
+                    $document[0].title = 'gotunes';
+                    $rootScope.showStatusBar = false;
                 }
             }, true);
 
@@ -154,7 +154,7 @@
             });
 
             $scope.$on('ws.open', function () {
-                gotunes.sendCommand(Command.REQUEST_VIEW, ContextType.ALL_ARTISTS);
+                gotunes.sendCommand(Command.REQUEST_VIEW, ViewType.QUEUE);
             });
 
             $scope.$on('ws.message', function (evt, msg) {
@@ -173,7 +173,8 @@
             });
 
             $scope.onSeek = function (percent) {
-                gotunes.sendCommand(Command.SEEK_TO, percent);
+                let pos = $scope.nowplaying.time.total * (percent / 100);
+                gotunes.sendCommand(Command.SEEK_TO, pos);
             };
 
             $scope.togglePlaystate = function () {
@@ -183,6 +184,10 @@
 
             $scope.playNext = angular.bind(this, gotunes.sendCommand, Command.PLAY_NEXT);
             $scope.playPrevious = angular.bind(this, gotunes.sendCommand, Command.PLAY_PREV);
+
+            $scope.playInPosition = function (pos) {
+                gotunes.sendCommand(Command.PLAY_QUEUE_FROM_POSITION, pos);
+            };
 
             domSlider = $document[0].getElementById('slider');
             noUiSlider.create(domSlider, {

@@ -1,52 +1,59 @@
 (function (exports) {
+    'use strict';
 
     function name (val) { return Object.keys(this).find(function (k) { return this[k] === val }, this) }
 
-    function _enumify (obj) {
+    function enumify (arr, start) {
+        let i = (start === undefined) ? 0 : start;
+        let obj = arr.reduce(function (a, c) { a[c] = i++; return a; }, {});
         obj.name = name.bind(obj);
         Object.freeze(obj);
         return obj;
     }
 
-    exports.PlayState = _enumify({
-        STOPPED: 1,
-        PLAYING: 2,
-        PAUSED: 3
-    });
+    exports.PlayState = enumify([
+        "STOPPED",
+        "PLAYING",
+        "PAUSED"
+    ], 1);
 
-    exports.MessageType = _enumify({
-        NOW_PLAYING: 1,
-        VIEW_UPDATE: 2,
-        COMMAND: 3
-    });
+    exports.MessageType = enumify([
+        "NOW_PLAYING",
+        "VIEW_UPDATE",
+        "COMMAND"
+    ], 1);
 
-    exports.Command = _enumify({
-        SET_PLAYSTATE: 1,
-        SEEK_TO: 2,
-        PLAY_NEXT: 3,
-        PLAY_PREV: 4,
-        PLAY_FROM_CONTEXT: 5,
-        SET_VOLUME: 6,
-        SET_CONTEXT: 7,
-        REQUEST_VIEW: 8,
-        NEW_PLAYLIST: 9,
-        SAVE_PLAYLIST: 10,
-        ADD_TO_PLAYLIST: 11
-    });
+    exports.Command = enumify([
+        "SET_PLAYSTATE",
+        "SEEK_TO",
+        "PLAY_NEXT",
+        "PLAY_PREV",
+        "PLAY_QUEUE_FROM_POSITION",
+        "SET_VOLUME",
+        "SET_SHUFFLE",
+        "SET_REPEAT_MODE",
+        "REQUEST_VIEW",
+        "ADD_TO_QUEUE",
+        "SAVE_AS_PLAYLIST",
+        "SAVE_PLAYLIST",
+        "DELETE_PLAYLIST",
+        "LOAD_PLAYLIST"
+    ], 1);
 
-    exports.ContextType = _enumify({
-        ALL_ARTISTS: 1,
-        ARTIST_DETAIL: 2,
-        ALL_ALBUMS: 3,
-        ALBUM_DETAIL: 4,
-        ALL_TRACKS: 5,
-        PLAYLIST: 6,
-        PLAYLIST_DETAIL: 7,
-    });
+    exports.ViewType = enumify([
+        "ALL_ARTISTS",
+        "ARTIST_DETAIL",
+        "ALL_ALBUMS",
+        "ALBUM_DETAIL",
+        "ALL_TRACKS",
+        "PLAYLIST",
+        "PLAYLIST_DETAIL",
+        "QUEUE"
+    ], 1);
 
-    exports.RepeatMode = _enumify({
-        OFF: 1,
-        ALL: 2,
-        ONE: 3
-    });
+    exports.RepeatMode = enumify([
+        "OFF",
+        "ALL",
+        "ONE"
+    ], 1);
 })(typeof exports === 'undefined' ? window.enums = {} : exports);

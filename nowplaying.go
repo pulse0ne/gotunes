@@ -10,6 +10,13 @@ type PlayTime struct {
 	Current int `json:"current"`
 }
 
+func (a *PlayTime) Copy() PlayTime {
+	return PlayTime{
+		Total:   a.Total,
+		Current: a.Current,
+	}
+}
+
 func (a *PlayTime) Equal(b *PlayTime) bool {
 	return &a == &b || (a.Total == b.Total && a.Current == b.Current)
 }
@@ -20,6 +27,18 @@ type Track struct {
 	Title    string `json:"title"`
 	Duration int    `json:"duration"`
 	TrackNum string `json:"tracknum"`
+	File     string `json:"file"`
+}
+
+func (a *Track) Copy() Track {
+	return Track{
+		Artist:   a.Artist,
+		Album:    a.Album,
+		Title:    a.Title,
+		Duration: a.Duration,
+		TrackNum: a.TrackNum,
+		File:     a.File,
+	}
 }
 
 func (a *Track) Equal(b *Track) bool {
@@ -27,17 +46,9 @@ func (a *Track) Equal(b *Track) bool {
 		a.Album == b.Album &&
 		a.Title == b.Title &&
 		a.Duration == b.Duration &&
-		a.TrackNum == b.TrackNum)
+		a.TrackNum == b.TrackNum &&
+		a.File == b.File)
 
-}
-
-type Context struct {
-	CtxType message.ContextType `json:"type"`
-	Data    string              `json:"data"`
-}
-
-func (c *Context) Equal(b *Context) bool {
-	return &c == &b || (c.CtxType == b.CtxType && c.Data == b.Data)
 }
 
 type Info struct {
@@ -47,7 +58,6 @@ type Info struct {
 	Track     Track              `json:"track"`
 	Repeat    message.RepeatMode `json:"repeat"`
 	Shuffle   bool               `json:"shuffle"`
-	Context   Context            `json:"context"`
 }
 
 type NowPlaying struct {
@@ -64,14 +74,26 @@ func NewNowPlaying() *NowPlaying {
 	}
 }
 
+func (n *NowPlaying) Copy() NowPlaying {
+	return NowPlaying{
+		Info: &Info{
+			Time:      n.Info.Time.Copy(),
+			Playstate: n.Info.Playstate,
+			Volume:    n.Info.Volume,
+			Track:     n.Info.Track.Copy(),
+			Repeat:    n.Info.Repeat,
+			Shuffle:   n.Info.Shuffle,
+		},
+	}
+}
+
 func (n *NowPlaying) Equal(b *NowPlaying) bool {
 	return &n == &b || (n.Info.Time.Equal(&b.Info.Time) &&
 		n.Info.Track.Equal(&b.Info.Track) &&
 		n.Info.Playstate == b.Info.Playstate &&
 		n.Info.Volume == b.Info.Volume &&
 		n.Info.Repeat == b.Info.Repeat &&
-		n.Info.Shuffle == b.Info.Shuffle &&
-		n.Info.Context.Equal(&b.Info.Context))
+		n.Info.Shuffle == b.Info.Shuffle)
 }
 
 func (n *NowPlaying) GetInfo() Info {
@@ -90,6 +112,12 @@ func (n *NowPlaying) SetTime(t PlayTime) {
 func (n *NowPlaying) SetTimeCurrent(t int) {
 	n.infoMx.Lock()
 	n.Info.Time.Current = t
+	n.infoMx.Unlock()
+}
+
+func (n *NowPlaying) SetTimeTotal(t int) {
+	n.infoMx.Lock()
+	n.Info.Time.Total = t
 	n.infoMx.Unlock()
 }
 
@@ -146,7 +174,13 @@ func (n *NowPlaying) SetTrackNum(t string) {
 	n.infoMx.Unlock()
 }
 
-func (n *NowPlaying) SetTrackRepeat(r message.RepeatMode) {
+func (n *NowPlaying) SetTrackFile(f string) {
+	n.infoMx.Lock()
+	n.Info.Track.File = f
+	n.infoMx.Unlock()
+}
+
+func (n *NowPlaying) SetRepeat(r message.RepeatMode) {
 	n.infoMx.Lock()
 	n.Info.Repeat = r
 	n.infoMx.Unlock()
@@ -155,11 +189,5 @@ func (n *NowPlaying) SetTrackRepeat(r message.RepeatMode) {
 func (n *NowPlaying) SetShuffle(b bool) {
 	n.infoMx.Lock()
 	n.Info.Shuffle = b
-	n.infoMx.Unlock()
-}
-
-func (n *NowPlaying) SetContext(c Context) {
-	n.infoMx.Lock()
-	n.Info.Context = c
 	n.infoMx.Unlock()
 }

@@ -63,13 +63,13 @@ func mpdReport(m *mpd.Client, h *WsHub) {
 			nowplaying.SetVolume(v)
 			s, _ := strconv.Atoi(stat["single"])
 			if s == 1 {
-				nowplaying.SetTrackRepeat(message.ONE)
+				nowplaying.SetRepeat(message.ONE)
 			} else {
 				r, _ := strconv.Atoi(stat["repeat"])
 				if r == 1 {
-					nowplaying.SetTrackRepeat(message.ALL)
+					nowplaying.SetRepeat(message.ALL)
 				} else {
-					nowplaying.SetTrackRepeat(message.OFF)
+					nowplaying.SetRepeat(message.OFF)
 				}
 			}
 			r, _ := strconv.Atoi(stat["random"])
@@ -87,7 +87,24 @@ func mpdReport(m *mpd.Client, h *WsHub) {
 				nowplaying.SetTrackArtist(attr["Artist"])
 				nowplaying.SetTrackTitle(attr["Title"])
 				nowplaying.SetTrackAlbum(attr["Album"])
-				// TODO: finish
+				nowplaying.SetTrackNum(attr["Track"])
+				nowplaying.SetTrackFile(attr["file"])
+
+				t, err := strconv.Atoi(attr["Time"])
+				if err != nil {
+					nowplaying.SetTrackDuration(0)
+					nowplaying.SetTimeTotal(0)
+				} else {
+					nowplaying.SetTrackDuration(t)
+					nowplaying.SetTimeTotal(t)
+				}
+			}
+
+			t, err := strconv.ParseFloat(stat["elapsed"], 32)
+			if err != nil {
+				nowplaying.SetTimeCurrent(0)
+			} else {
+				nowplaying.SetTimeCurrent(int(t))
 			}
 
 			h.Broadcast <- &message.WsMessage{
@@ -155,10 +172,17 @@ func handleCommand(msg *message.WsMessage) error {
 	case message.PLAY_PREV:
 		LOG.Debug("PLAY_PREV")
 		return conn.Previous()
-	case message.PLAY_FROM_CONTEXT:
-		// TODO
-		LOG.Debug("PLAY_FROM_CONTEXT")
-		break
+	case message.PLAY_QUEUE_FROM_POSITION:
+		LOG.Debug("PLAY_QUEUE_FROM_POSITION")
+		data, ok := payload["data"]
+		if !ok {
+			return errors.New("No data provided for PLAY_QUEUE_FROM_POSITION command")
+		}
+		pos, ok := data.(float64)
+		if !ok {
+			return errors.New("Position in non-number format")
+		}
+		return conn.Play(int(pos))
 	case message.SET_VOLUME:
 		LOG.Debug("SET_VOLUME")
 		data, ok := payload["data"]
@@ -170,141 +194,6 @@ func handleCommand(msg *message.WsMessage) error {
 			return errors.New("Volume in non-number format")
 		}
 		return conn.SetVolume(int(v))
-	case message.SET_CONTEXT:
-		// TODO
-		LOG.Debug("SET_CONTEXT")
-		break
-	case message.REQUEST_VIEW:
-		LOG.Debug("REQUEST_VIEW")
-		data, ok := payload["data"]
-		if !ok {
-			LOG.Error("No data provided for view request:", payload)
-			break
-		}
-		view, ok := data.(float64)
-		if !ok {
-			LOG.Error("Data for view request in unexpected format:", data)
-			break
-		}
-		omsg := &message.WsMessage{
-			ClientId: msg.ClientId,
-			MType:    message.VIEW_UPDATE,
-		}
-
-		// TODO: refactor for less repetition
-		switch message.ContextType(view) {
-		case message.ALL_ARTISTS:
-			attr, err := conn.List("artist")
-			if err != nil {
-				return err
-			}
-			omsg.Payload = map[string]interface{}{
-				"type": message.ContextType(view),
-				"data": attr,
-			}
-			break
-		case message.ARTIST_DETAIL:
-			artist, ok := payload["detail"]
-			if !ok {
-				return errors.New("No detail provided")
-			}
-			a, ok := artist.(string)
-			if !ok {
-				return errors.New("could not decode string")
-			}
-			attr, err := conn.Find("artist", a)
-			if err != nil {
-				return err
-			}
-			omsg.Payload = map[string]interface{}{
-				"type": message.ContextType(view),
-				"data": attr,
-			}
-			break
-		case message.ALL_ALBUMS:
-			attr, err := conn.List("album")
-			if err != nil {
-				return err
-			}
-			omsg.Payload = map[string]interface{}{
-				"type": message.ContextType(view),
-				"data": attr,
-			}
-			break
-		case message.ALBUM_DETAIL:
-			album, ok := payload["detail"]
-			if !ok {
-				return errors.New("No detail provided")
-			}
-			a, ok := album.(string)
-			if !ok {
-				return errors.New("could not decode string")
-			}
-			attr, err := conn.Find("album", a)
-			if err != nil {
-				return err
-			}
-			omsg.Payload = map[string]interface{}{
-				"type": message.ContextType(view),
-				"data": attr,
-			}
-			break
-		case message.ALL_TRACKS:
-			attr, err := conn.ListAllInfo("/")
-			if err != nil {
-				return err
-			}
-			omsg.Payload = map[string]interface{}{
-				"type": message.ContextType(view),
-				"data": attr,
-			}
-			break
-		case message.PLAYLIST:
-			attr, err := conn.ListPlaylists()
-			if err != nil {
-				return err
-			}
-			omsg.Payload = map[string]interface{}{
-				"type": message.ContextType(view),
-				"data": attr,
-			}
-			break
-		case message.PLAYLIST_DETAIL:
-			playlist, ok := payload["detail"]
-			if !ok {
-				return errors.New("No detail provided")
-			}
-			pl, ok := playlist.(string)
-			if !ok {
-				return errors.New("Could not decode string")
-			}
-			attr, err := conn.PlaylistContents(pl)
-			if err != nil {
-				return err
-			}
-			omsg.Payload = map[string]interface{}{
-				"type": message.Command(command),
-				"data": attr,
-			}
-			break
-		default:
-			return errors.New("Received an unsupported view type")
-		}
-
-		hub.Outgoing <- omsg
-		break
-	case message.NEW_PLAYLIST:
-		// TODO
-		LOG.Debug("NEW_PLAYLIST")
-		break
-	case message.SAVE_PLAYLIST:
-		// TODO
-		LOG.Debug("SAVE_PLAYLIST")
-		break
-	case message.ADD_TO_PLAYLIST:
-		// TODO
-		LOG.Debug("ADD_TO_PLAYLIST")
-		break
 	case message.SET_SHUFFLE:
 		LOG.Debug("SET_SHUFFLE")
 		data, ok := payload["data"]
@@ -340,6 +229,150 @@ func handleCommand(msg *message.WsMessage) error {
 		default:
 			return errors.New("Unrecognized repeat mode")
 		}
+	case message.REQUEST_VIEW:
+		LOG.Debug("REQUEST_VIEW")
+		data, ok := payload["data"]
+		if !ok {
+			return errors.New("No data provided for view request")
+		}
+		view, ok := data.(float64)
+		if !ok {
+			return errors.New("Data for view request in unexpected format")
+		}
+		omsg := &message.WsMessage{
+			ClientId: msg.ClientId,
+			MType:    message.VIEW_UPDATE,
+		}
+
+		// TODO: refactor for less repetition
+		switch message.ViewType(view) {
+		case message.QUEUE:
+			attr, err := conn.PlaylistInfo(-1, -1)
+			if err != nil {
+				return err
+			}
+			omsg.Payload = map[string]interface{}{
+				"type": message.ViewType(view),
+				"data": attr,
+			}
+		case message.ALL_ARTISTS:
+			attr, err := conn.List("artist")
+			if err != nil {
+				return err
+			}
+			omsg.Payload = map[string]interface{}{
+				"type": message.ViewType(view),
+				"data": attr,
+			}
+		case message.ARTIST_DETAIL:
+			artist, ok := payload["detail"]
+			if !ok {
+				return errors.New("No detail provided")
+			}
+			a, ok := artist.(string)
+			if !ok {
+				return errors.New("could not decode string")
+			}
+			attr, err := conn.Find("artist", a)
+			if err != nil {
+				return err
+			}
+			omsg.Payload = map[string]interface{}{
+				"type": message.ViewType(view),
+				"data": attr,
+			}
+		case message.ALL_ALBUMS:
+			attr, err := conn.List("album")
+			if err != nil {
+				return err
+			}
+			omsg.Payload = map[string]interface{}{
+				"type": message.ViewType(view),
+				"data": attr,
+			}
+		case message.ALBUM_DETAIL:
+			album, ok := payload["detail"]
+			if !ok {
+				return errors.New("No detail provided")
+			}
+			a, ok := album.(string)
+			if !ok {
+				return errors.New("could not decode string")
+			}
+			attr, err := conn.Find("album", a)
+			if err != nil {
+				return err
+			}
+			omsg.Payload = map[string]interface{}{
+				"type": message.ViewType(view),
+				"data": attr,
+			}
+		case message.ALL_TRACKS:
+			attr, err := conn.ListAllInfo("/")
+			if err != nil {
+				return err
+			}
+			omsg.Payload = map[string]interface{}{
+				"type": message.ViewType(view),
+				"data": attr,
+			}
+		case message.PLAYLIST:
+			attr, err := conn.ListPlaylists()
+			if err != nil {
+				return err
+			}
+			omsg.Payload = map[string]interface{}{
+				"type": message.ViewType(view),
+				"data": attr,
+			}
+		case message.PLAYLIST_DETAIL:
+			playlist, ok := payload["detail"]
+			if !ok {
+				return errors.New("No detail provided")
+			}
+			pl, ok := playlist.(string)
+			if !ok {
+				return errors.New("Could not decode string")
+			}
+			attr, err := conn.PlaylistContents(pl)
+			if err != nil {
+				return err
+			}
+			omsg.Payload = map[string]interface{}{
+				"type": message.Command(command),
+				"data": attr,
+			}
+		default:
+			return errors.New("Received an unsupported view type")
+		}
+
+		hub.Outgoing <- omsg
+	case message.ADD_TO_QUEUE:
+		LOG.Debug("ADD_TO_QUEUE")
+		data, ok := payload["data"]
+		if !ok {
+			return errors.New("No data provided for ADD_TO_QUEUE command")
+		}
+		uri, ok := data.(string)
+		if !ok {
+			return errors.New("Could not decode uri string")
+		}
+		err := conn.Add(uri)
+		if err != nil {
+			return err
+		}
+	case message.SAVE_AS_PLAYLIST:
+		LOG.Debug("SAVE_AS_PLAYLIST")
+		// TODO
+	case message.SAVE_PLAYLIST:
+		LOG.Debug("SAVE_PLAYLIST")
+		// TODO
+	case message.DELETE_PLAYLIST:
+		LOG.Debug("DELETE_PLAYLIST")
+		// TODO
+	case message.LOAD_PLAYLIST:
+		LOG.Debug("LOAD_PLAYLIST")
+		// TODO
 	default:
 		return errors.New("Unrecognized command")
 	}
@@ -355,7 +388,6 @@ func messageHandler(msg *message.WsMessage) {
 		if err != nil {
 			LOG.Error(err)
 		}
-		break
 	default:
 		LOG.Info("Got an unrecognized message type")
 	}

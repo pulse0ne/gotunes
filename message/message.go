@@ -34,30 +34,32 @@ const (
 	SEEK_TO
 	PLAY_NEXT
 	PLAY_PREV
-	PLAY_FROM_CONTEXT
+	PLAY_QUEUE_FROM_POSITION
 	SET_VOLUME
-	SET_CONTEXT
-	REQUEST_VIEW
-	NEW_PLAYLIST
-	SAVE_PLAYLIST
-	ADD_TO_PLAYLIST
 	SET_SHUFFLE
 	SET_REPEAT_MODE
+	REQUEST_VIEW
+	ADD_TO_QUEUE
+	SAVE_AS_PLAYLIST
+	SAVE_PLAYLIST
+	DELETE_PLAYLIST
+	LOAD_PLAYLIST
 )
 
 //==================================
 // ContextType enum
-type ContextType int
+type ViewType int
 
 const (
-	_ ContextType = iota
+	_ ViewType = iota
 	ALL_ARTISTS
 	ARTIST_DETAIL
 	ALL_ALBUMS
 	ALBUM_DETAIL
 	ALL_TRACKS
 	PLAYLIST
-	PLAYLIST_DETAIL
+	PLAYLIST_DETAIL // TODO: do we want this?
+	QUEUE
 )
 
 //==================================

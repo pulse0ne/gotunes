@@ -76,7 +76,8 @@ body {
 }
 
 .time-label {
-    font-family: monospace;
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 100;
     font-size: 11px;
 }
 
@@ -222,6 +223,7 @@ body {
 }
 
 .time-label {
+
     font-size: 12px;
 }
 
@@ -412,15 +414,23 @@ md-dialog.eq-dialog,
 
 #content-view {
     transition: unset;
+    overflow: hidden;
 }
 
 #content-header {
-    position: fixed;
     background: #f5f5f5;
     color: #ff2570;
-    padding: 5px;
+    padding: 2px;
     border-bottom: 1px solid #ff2570;
-    width: 100%;
+}
+
+#content-header h3 {
+    margin: 7px;
+}
+
+#nav-view-content {
+    overflow-y: scroll;
+    height: 100%;
 }
 
 .content-view.ng-enter,

@@ -1,67 +1,87 @@
 <div layout="row" layout-fill>
     <md-sidenav id="left-sidenav" md-is-locked-open="true" layout="column">
-        <div class="nav-button" ng-class="{selected: view.type === context.ALL_ARTISTS}" ng-click="changeView(context.ALL_ARTISTS)">
+        <div class="nav-button" ng-class="{selected: view.type === vt.QUEUE}" ng-click="changeView(vt.QUEUE)">
+            <i class="fa fa-fw fa-ellipsis-v"></i>
+            <span ng-show="$mdMedia('gt-xs')">Queue</span>
+        </div>
+        <div class="nav-button" ng-class="{selected: view.type === vt.ALL_ARTISTS}" ng-click="changeView(vt.ALL_ARTISTS)">
             <i class="fa fa-fw fa-user"></i>
             <span ng-show="$mdMedia('gt-xs')">Artist</span>
         </div>
-        <div class="nav-button" ng-class="{selected: view.type === context.ALL_ALBUMS}" ng-click="changeView(context.ALL_ALBUMS)">
+        <div class="nav-button" ng-class="{selected: view.type === vt.ALL_ALBUMS}" ng-click="changeView(vt.ALL_ALBUMS)">
             <i class="fa fa-fw fa-th-large"></i>
             <span ng-show="$mdMedia('gt-xs')">Album</span>
         </div>
-        <div class="nav-button" ng-class="{selected: view.type === context.ALL_TRACKS}" ng-click="changeView(context.ALL_TRACKS)">
+        <div class="nav-button" ng-class="{selected: view.type === vt.ALL_TRACKS}" ng-click="changeView(vt.ALL_TRACKS)">
             <i class="fa fa-fw fa-music"></i>
             <span ng-show="$mdMedia('gt-xs')">Track</span>
         </div>
-        <div class="nav-button" ng-class="{selected: view.type === context.PLAYLIST}" ng-click="changeView(context.PLAYLIST)">
+        <div class="nav-button" ng-class="{selected: view.type === vt.PLAYLIST}" ng-click="changeView(vt.PLAYLIST)">
             <i class="fa fa-fw fa-podcast"></i>
             <span ng-show="$mdMedia('gt-xs')">Playlist</span>
-        </div>
-        <div class="nav-button" ng-class="{selected: view.type === context.SCAN_ROOT}" ng-click="changeView(context.SCAN_ROOT)">
-            <i class="fa fa-fw fa-database"></i>
-            <span ng-show="$mdMedia('gt-xs')">Sources</span>
         </div>
     </md-sidenav>
     <div id="sidenav-spacer"></div>
     <div id="content-view" flex>
-        <div id="content-header" layout="row" layout-align="center center">
-            <h3 ng-if="view.type === context.ALL_ARTISTS">ARTISTS</h3>
-            <i class="fa fa-fw fa-plus"></i>
+        <div id="content-header" flex="grow" layout="row" layout-align="center center">
+            <h3 ng-if="view.type === vt.QUEUE">QUEUE</h3>
+            <h3 ng-if="view.type === vt.ALL_ARTISTS">ARTISTS</h3>
+            <h3 ng-if="view.type === vt.ALL_ALBUMS">ALBUMS</h3>
+            <h3 ng-if="view.type === vt.ALL_TRACKS">TRACKS</h3>
+            <h3 ng-if="view.type === vt.PLAYLIST">PLAYLISTS</h3>
+            <!--TODO<i class="fa fa-fw fa-plus"></i>-->
         </div>
-        <div id="content-header-spacer"></div>
         <div id="nav-view-content" flex>
+            <!-- queue view -->
+            <div ng-if="view.type === vt.QUEUE" class="content-view">
+                <div ng-if="view.data.length" ng-repeat="t in view.data track by t.file" layout="row" class="list-item"
+                     ng-class="{playing: t.file === nowplaying.track.file, even: $even}" ng-click="playInPosition($index)">
+                    <div flex class="collapsible">
+                        <i ng-if="t.file === nowplaying.track.file" class="playing-icon fa fa-fw fa-play"></i>{{t.Title}}
+                    </div>
+                    <div flex class="collapsible">{{t.Artist}}</div>
+                    <div class="collapsible">{{t.Time | trackTime}}</div>
+                </div>
+                <div ng-if="!view.data.length" layout="column" layout-align="center center">
+                    <p>Queue is empty</p>
+                </div>
+            </div>
+
             <!-- artist view -->
-            <div ng-if="view.type === context.ALL_ARTISTS" class="content-view">
+            <div ng-if="view.type === vt.ALL_ARTISTS" class="content-view">
                 <div ng-repeat="artist in view.data" layout="row" class="list-item" ng-class="{even: $even}">
                     <div flex class="collapsible">{{artist}}</div>
                 </div>
             </div>
 
             <!-- album view -->
-            <div ng-if="view.type === context.ALL_ALBUMS" class="content-view">
+            <div ng-if="view.type === vt.ALL_ALBUMS" class="content-view">
                 <div ng-repeat="album in view.data" layout="row" class="list-item" ng-class="{even: $even}">
                     <div flex class="collapsible">{{album}}</div>
                 </div>
             </div>
 
             <!-- track view -->
-            <div ng-if="view.type === context.ALL_TRACKS" class="content-view">
-                <div ng-repeat="track in view.data" layout="row" class="list-item" ng-class="{playing: true === false, even: $even}">
+            <div ng-if="view.type === vt.ALL_TRACKS" class="content-view">
+                <div ng-repeat="t in view.data track by t.file" layout="row" class="list-item"
+                     ng-class="{playing: t.file === nowplaying.track.file, even: $even}" ng-click="addToQueue(t)">
                     <div flex class="collapsible">
-                        <i ng-if="true === false" class="playing-icon fa fa-fw fa-play"></i>{{track.Title}}
+                        <i ng-if="t.file === nowplaying.track.file" class="playing-icon fa fa-fw fa-play"></i>{{t.Title}}
                     </div>
-                    <div flex class="collapsible">{{track.Artist}}</div>
-                    <div class="collapsible">{{track.Time | trackTime}}</div>
+                    <div flex class="collapsible">{{t.Artist}}</div>
+                    <div class="collapsible">{{t.Time | trackTime}}</div>
                 </div>
             </div>
 
             <!-- playlist view -->
-            <div ng-if="view.type === context.PLAYLIST" class="content-view">
+            <div ng-if="view.type === vt.PLAYLIST" class="content-view">
                 <div class="view-header"></div>
                 <div ng-repeat="playlist in view.data" layout="row" class="list-item" ng-class="{even: $even}">
                     <div flex class="collapsible">{{playlist}}</div>
                 </div>
             </div>
 
+            <div class="list-item-spacer"></div>
             <div class="list-item-spacer"></div>
         </div>
     </div>

@@ -27,7 +27,7 @@ func NewWsHub() *WsHub {
 		connections: make(map[string]*WsConnection),
 		register:    make(chan *WsConnection),
 		unregister:  make(chan *WsConnection),
-		Broadcast:   make(chan *message.WsMessage),
+		Broadcast:   make(chan *message.WsMessage, 1),
 		Incoming:    make(chan *message.WsMessage),
 		Outgoing:    make(chan *message.WsMessage, 1),
 	}
