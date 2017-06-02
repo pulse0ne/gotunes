@@ -49,6 +49,11 @@
             $scope.addToQueue = function (track) {
                 gotunes.sendCommand(Command.ADD_TO_QUEUE, track.file);
             };
+
+            $scope.openItemMenu = function (item) {
+                console.log('open item menu');
+                $scope.selected === item ? delete $scope.selected : $scope.selected = item;
+            };
         }
     ]);
 })(window.angular);

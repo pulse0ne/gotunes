@@ -1,0 +1,8 @@
+{
+    "mpdhost": "localhost",
+    "mpdport": 6600,
+    "httpport": 9999,
+    "webroot": "./public",
+    "startmpd": true,
+    "loglevel": "debug"
+}

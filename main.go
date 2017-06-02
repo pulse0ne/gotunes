@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"flag"
 	"github.com/pulse0ne/gompd/mpd"
+	"github.com/pulse0ne/gotunes/cfg"
 	"github.com/pulse0ne/gotunes/logger"
 	"github.com/pulse0ne/gotunes/message"
 	"net/http"
@@ -18,19 +20,23 @@ var nowplaying = NewNowPlaying()
 var conn *mpd.Client
 
 //================
-func mpdConnect(addr string) *mpd.Client {
+func mpdConnect(addr string, start bool) *mpd.Client {
 	var err error
-	conn, err = mpd.Dial("tcp", addr)
+	var dial = func() (*mpd.Client, error) { return mpd.Dial("tcp", addr) }
+	conn, err = dial()
 	if err != nil {
-		LOG.Info("mpd is not running, attempting to start it....")
-
+		if start {
+			LOG.Info("mpd is not running, attempting to start it....")
+		} else {
+			LOG.Fatal("mpd is not running!")
+		}
 		cmd := exec.Command("mpd")
 		_, err := cmd.CombinedOutput()
 		if err != nil {
 			LOG.Fatal(err)
 		}
 		var ferr error
-		conn, ferr = mpd.Dial("tcp", addr)
+		conn, ferr = dial()
 		if ferr != nil {
 			LOG.Fatal(ferr)
 		}
@@ -116,7 +122,6 @@ func mpdReport(m *mpd.Client, h *WsHub) {
 }
 
 //==============
-// TODO: imnprove error messages
 func handleCommand(msg *message.WsMessage) error {
 	payload, ok := msg.Payload.(map[string]interface{})
 	if !ok {
@@ -244,7 +249,6 @@ func handleCommand(msg *message.WsMessage) error {
 			MType:    message.VIEW_UPDATE,
 		}
 
-		// TODO: refactor for less repetition
 		switch message.ViewType(view) {
 		case message.QUEUE:
 			attr, err := conn.PlaylistInfo(-1, -1)
@@ -346,6 +350,7 @@ func handleCommand(msg *message.WsMessage) error {
 			return errors.New("Received an unsupported view type")
 		}
 
+		// send the view data back to the requesting client
 		hub.Outgoing <- omsg
 	case message.ADD_TO_QUEUE:
 		LOG.Debug("ADD_TO_QUEUE")
@@ -357,22 +362,44 @@ func handleCommand(msg *message.WsMessage) error {
 		if !ok {
 			return errors.New("Could not decode uri string")
 		}
-		err := conn.Add(uri)
-		if err != nil {
-			return err
-		}
-	case message.SAVE_AS_PLAYLIST:
-		LOG.Debug("SAVE_AS_PLAYLIST")
-		// TODO
+		return conn.Add(uri)
 	case message.SAVE_PLAYLIST:
 		LOG.Debug("SAVE_PLAYLIST")
-		// TODO
+		data, ok := payload["data"]
+		if !ok {
+			return errors.New("No data provided for SAVE_PLAYLIST command")
+		}
+		name, ok := data.(string)
+		if !ok {
+			return errors.New("Could not decode name string for SAVE_PLAYLIST command")
+		}
+		return conn.PlaylistSave(name)
 	case message.DELETE_PLAYLIST:
 		LOG.Debug("DELETE_PLAYLIST")
+		data, ok := payload["data"]
+		if !ok {
+			return errors.New("No data provided for DELETE_PLAYLIST command")
+		}
+		name, ok := data.(string)
+		if !ok {
+			return errors.New("Could not decode name string for DELETE_PLAYLIST command")
+		}
+		return conn.PlaylistRemove(name)
+	case message.RENAME_PLAYLIST:
+		LOG.Debug("RENAME_PLAYLIST")
 		// TODO
 	case message.LOAD_PLAYLIST:
 		LOG.Debug("LOAD_PLAYLIST")
-		// TODO
+		conn.Clear()
+		data, ok := payload["data"]
+		if !ok {
+			return errors.New("No data provided for LOAD_PLAYLIST command")
+		}
+		name, ok := data.(string)
+		if !ok {
+			return errors.New("Could not decode name string for LOAD_PLAYLIST command")
+		}
+		return conn.PlaylistLoad(name, -1, -1)
 	default:
 		return errors.New("Unrecognized command")
 	}
@@ -384,8 +411,7 @@ func messageHandler(msg *message.WsMessage) {
 	LOG.Debug(string(s))
 	switch msg.MType {
 	case message.COMMAND:
-		err := handleCommand(msg)
-		if err != nil {
+		if err := handleCommand(msg); err != nil {
 			LOG.Error(err)
 		}
 	default:
@@ -395,8 +421,28 @@ func messageHandler(msg *message.WsMessage) {
 
 //===============
 func main() {
+	c := flag.String("c", "config.json", "Config file location")
+	flag.Parse()
+	flagset := make(map[string]bool)
+	flag.Visit(func(f *flag.Flag) { flagset[f.Name] = true })
+
+	config := cfg.Config{}
+	err := config.Load(*c)
+	if err != nil {
+		if flagset["c"] {
+			LOG.Warn("Could not load provided config file:", err)
+			if e := config.Load("config.json"); e != nil {
+				LOG.Fatal("Could not load default config file:", e)
+			}
+		} else {
+			LOG.Fatal("Could not load default config file:", err)
+		}
+	}
+
+	LOG = logger.NewLoggerFromString(config.LogLevel)
+
 	// connect to mpd -- will exit fatally if connection cannot be made
-	conn = mpdConnect("localhost:6600")
+	conn = mpdConnect(config.MpdHost+":"+strconv.Itoa(int(config.MpdPort)), config.StartMpd)
 	defer func() {
 		conn.Pause(true)
 		conn.Close()
@@ -405,7 +451,13 @@ func main() {
 	hub = NewWsHub()
 	hub.AddListener("main", messageHandler)
 
-	http.Handle("/", http.FileServer(http.Dir("./public")))
+	http.Handle("/", http.FileServer(http.Dir(config.WebRoot)))
+
+	// I don't like this, but without custom FileServer 404 handling... ¯\_(ツ)_/¯
+	http.HandleFunc("/idle", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/", http.StatusMovedPermanently)
+	})
+
 	http.HandleFunc("/websocket", func(w http.ResponseWriter, r *http.Request) {
 		LOG.Debug("New Websocket Connection")
 		HandleConnection(hub, w, r, func() *message.WsMessage {
@@ -418,7 +470,5 @@ func main() {
 
 	go mpdReport(conn, hub)
 
-	LOG.Fatal(http.ListenAndServe(":9999", nil))
+	LOG.Fatal(http.ListenAndServe(":"+strconv.Itoa(int(config.HttpPort)), nil))
 }
-
-// server/application -> mpd -> JACK -> (qjackctl) -> JAMin EQ -> (qjackctl) -> output device

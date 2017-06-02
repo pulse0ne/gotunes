@@ -1,0 +1,144 @@
+/****************
+ *     ODIN     *
+ ****************/
+html,
+body {
+    color: #e8e8e8;
+}
+
+body {
+    background: #242424;
+}
+
+.svg-control #control {
+    fill: #e8e8e8;
+}
+
+.svg-control:hover #control {
+    fill: #0f0f0f;
+}
+
+.view.idle {
+    color: #ececec;
+}
+
+.view.nav {
+    background: #242424;
+}
+
+#status-bar {
+    background: #0f0f0f;
+    color: #ececec;
+    border-bottom: 1px solid #0f0f0f;
+}
+
+#sticky-footer {
+    background: #323232;
+    border-top: 1px solid #0f0f0f;
+}
+
+#sticky-footer.shadow,
+#status-bar {
+    box-shadow: 0 -5px 10px 0 rgba(0, 0, 0, 0.15);
+}
+
+.song-info {
+    text-shadow: 0 0 75px black;
+}
+
+.track-bar,
+#slider {
+    background: #242424;
+}
+
+#slider .noUi-base .noUi-connect,
+.track-progress {
+    background: linear-gradient(to right, #9e2cff, #5e55bc, #36a1ff, #44f1e4, #5bff86);
+}
+
+#slider .noUi-base .noUi-origin .noUi-handle {
+    background: #e8e8e8;
+}
+
+.list-item.even {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.list-item:hover,
+.list-item:active,
+.list-item.playing,
+.list-item.sel {
+    background: #ececec;
+    color: #323232;
+}
+
+.nav-button:hover,
+.nav-button:active,
+.nav-button.selected {
+    background: #ececec;
+    color: #323232;
+}
+
+#content-header {
+    background: #323232;
+    color: #ececec;
+}
+
+#content-header {
+    border-bottom: 1px solid #0f0f0f;
+}
+
+.view-item-menu,
+#left-sidenav {
+    background: #323232;
+    color: #e7dfdd;
+}
+
+#left-sidenav {
+    border-right: 1px solid #0f0f0f;
+}
+
+.view-item-menu-controls .clickable:hover,
+md-checkbox.md-checked .md-ink-ripple {
+    color: #9e2cff;
+}
+
+md-checkbox.md-checked .md-icon,
+.md-checkbox-enabled[selected] .md-icon {
+    background-color: #9e2cff;
+}
+
+md-checkbox:not(.md-checked) .md-icon {
+    border-color: rgba(255, 255, 255, 0.55);
+}
+
+md-select .md-select-value.md-select-placeholder,
+md-input-container .md-input[disabled] {
+    color: rgba(255, 255, 255, 0.55);
+}
+
+md-select-menu md-content {
+    background: #0f0f0f;
+}
+
+md-select-menu md-content md-option,
+md-select:not([disabled]):focus .md-select-value,
+md-input-container .md-input {
+    color: #ececec;
+}
+
+md-input-container .md-input {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+md-input-container:not(.md-input-invalid).md-input-focused .md-input {
+    border-color: #9e2cff;
+}
+
+md-select-menu md-content md-option[selected],
+md-select-menu md-content md-option[selected]:focus,
+md-select-menu md-content md-option[selected]:hover,
+md-select-menu md-content md-option:not([disabled]):hover {
+    background: #323232;
+    color: #ececec;
+}

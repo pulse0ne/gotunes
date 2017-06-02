@@ -1,0 +1,4 @@
+/* re-define one style so browser doesn't reject empty stylesheet */
+body {
+    color: #272727;
+}

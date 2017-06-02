@@ -22,9 +22,11 @@
                 return 'assets/img/wall' + w + '.jpg'
             });
 
-            const handler = function () {
+            const handler = function (evt) {
+                evt.preventDefault();
+                evt.stopPropagation();
                 $rootScope.showStatusBar = true;
-                $location.path('/')
+                $location.path('/');
             };
 
             const getNextImageUrl = function () {

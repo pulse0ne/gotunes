@@ -34,9 +34,12 @@
         "SET_REPEAT_MODE",
         "REQUEST_VIEW",
         "ADD_TO_QUEUE",
-        "SAVE_AS_PLAYLIST",
+        "ADD_TO_QUEUE_AND_PLAY",
+        "REMOVE_FROM_QUEUE",
+        "CLEAR_QUEUE",
         "SAVE_PLAYLIST",
         "DELETE_PLAYLIST",
+        "RENAME_PLAYLIST",
         "LOAD_PLAYLIST"
     ], 1);
 
@@ -48,7 +51,8 @@
         "ALL_TRACKS",
         "PLAYLIST",
         "PLAYLIST_DETAIL",
-        "QUEUE"
+        "QUEUE",
+        "SETTINGS" // local only
     ], 1);
 
     exports.RepeatMode = enumify([

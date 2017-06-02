@@ -19,7 +19,8 @@
     <link rel="stylesheet" href="lib/vendor/material/angular-material.min.css">
     <link rel="stylesheet" href="lib/vendor/font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="lib/vendor/slider/nouislider.min.css">
-    <link rel="stylesheet" href="assets/gotunes.css">
+    <link rel="stylesheet" href="assets/css/gotunes.css">
+    <link rel="stylesheet" ng-href="{{settings.theme.url}}">
 
     <base href="/">
 </head>
@@ -57,16 +58,21 @@
 <!-- moment -->
 <script src="lib/vendor/moment/moment.min.js"></script>
 
-<!-- fit text -->
-<script src="lib/ngFitText.js"></script>
-
 <!-- noui slider -->
 <script src="lib/vendor/slider/nouislider.min.js"></script>
+
+<!-- quick repeat -->
+<script src="lib/vendor/quick-ng-repeat/quick-ng-repeat.js"></script>
+
+<!-- fit text -->
+<script src="lib/ngFitText.js"></script>
 
 <!-- other lib -->
 <script src="lib/websocket.js"></script>
 <script src="lib/slider.js"></script>
 <script src="lib/ngIdle.js"></script>
+<script src="lib/longpress.js"></script>
+<script src="lib/ngLocalStorage.js"></script>
 <script src="enums.js"></script>
 
 <!-- app -->

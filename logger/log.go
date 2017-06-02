@@ -3,6 +3,7 @@ package logger
 import (
 	"log"
 	"os"
+	"strings"
 )
 
 type Level int
@@ -53,6 +54,19 @@ func (lg *logging) Error(v ...interface{}) {
 
 func (lg *logging) Fatal(v ...interface{}) {
 	log.Fatalln(v...)
+}
+
+func NewLoggerFromString(level string) *logging {
+	switch strings.ToLower(level) {
+	case "debug":
+		return NewLogger(Ldebug)
+	case "warn":
+		return NewLogger(Lwarn)
+	case "error":
+		return NewLogger(Lerror)
+	default:
+		return NewLogger(Linfo)
+	}
 }
 
 func NewLogger(level Level) *logging {
