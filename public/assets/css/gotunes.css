@@ -109,7 +109,7 @@ body {
 
 .idle-animation {
     animation: kenburns 60s infinite;
-    -webkit-animation: kenburns 60s infinite;
+    -webkit-animation: wk-kenburns 60s infinite;
 }
 
 .view {
@@ -378,7 +378,7 @@ body {
     margin-right: 20px;
 }
 
-.content-view.settings-view {
+.settings-view {
     display: flex;
     flex-direction: row;
     -webkit-flex-direction: row;
@@ -414,6 +414,10 @@ body {
     background: #272727;
     color: #f5f5f5;
     overflow: hidden;
+}
+
+.view-item-menu-controls .clickable {
+    margin: 0 20px;
 }
 
 .view-item-menu-controls .clickable:hover {
@@ -465,7 +469,7 @@ md-checkbox:not(.md-checked) .md-icon {
     }
 }
 
-@-webkit-keyframes kenburns {
+@-webkit-keyframes wk-kenburns {
     0% {
         opacity: 0;
     }

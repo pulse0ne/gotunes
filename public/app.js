@@ -13,7 +13,8 @@
         'gotunes.track.slider',
         'ngLongPress',
         'ngLocalStorage',
-        'QuickList'
+        'QuickList',
+        'ngKeybindings'
     ]);
 
     /**
@@ -50,12 +51,28 @@
     ]);
 
     app.factory('gotunes.default.settings', ['themes', function (themes) {
+        let defaultKeybindings = {
+            next: {
+                name: 'Next Track',
+                keys: null
+            },
+            prev: {
+                name: 'Previous Track',
+                keys: null
+            },
+            pause: {
+                name: 'Toggle Pause',
+                keys: null
+            },
+        };
+
         return {
             theme: themes[0],
             disabledNav: [],
             idleDelay: 20,
             idleEnabled: true,
-            dynamicTitle: true
+            dynamicTitle: true,
+            keybindings: defaultKeybindings
         };
     }]);
 
@@ -118,34 +135,37 @@
             self.connect = ws.$open;
 
             self.UUID = (function () {
-                    let self = {};
-                    let t = [];
-                    let rand = new Uint32Array(4);
+                let self = {};
+                let t = [];
+                let rand = new Uint32Array(4);
 
-                    for (let i = 0; i < 256; i++) {
-                        t[i] = (i < 16 ? '0' : '') + i.toString(16);
-                    }
-                    let crypto = window.crypto || window.msCrypto; // for IE
+                for (let i = 0; i < 256; i++) {
+                    t[i] = (i < 16 ? '0' : '') + i.toString(16);
+                }
+                let crypto = window.crypto || window.msCrypto; // for IE
 
-                    self.generate = function () {
-                        crypto.getRandomValues(rand);
-                        let w = rand[0];
-                        let x = rand[1];
-                        let y = rand[2];
-                        let z = rand[3];
+                self.generate = function () {
+                    crypto.getRandomValues(rand);
+                    let w = rand[0];
+                    let x = rand[1];
+                    let y = rand[2];
+                    let z = rand[3];
 
-                        return t[w & 0xff] + t[w >> 8 & 0xff] + t[w >> 16 & 0xff] + t[w >> 24 & 0xff] + '-' +
-                            t[x & 0xff] + t[x >> 8 & 0xff] + '-' +
-                            t[x >> 16 & 0x0f | 0x40] + t[x >> 24 & 0xff] + '-' +
-                            t[y & 0x3f | 0x80] + t[y >> 8 & 0xff] + '-' +
-                            t[y >> 16 & 0xff] + t[y >> 24 & 0xff] + t[z & 0xff] + t[z >> 8 & 0xff] + t[z >> 16 & 0xff] + t[z >> 24 & 0xff];
-                    };
+                    return t[w & 0xff] + t[w >> 8 & 0xff] + t[w >> 16 & 0xff] + t[w >> 24 & 0xff] + '-' +
+                        t[x & 0xff] + t[x >> 8 & 0xff] + '-' +
+                        t[x >> 16 & 0x0f | 0x40] + t[x >> 24 & 0xff] + '-' +
+                        t[y & 0x3f | 0x80] + t[y >> 8 & 0xff] + '-' +
+                        t[y >> 16 & 0xff] + t[y >> 24 & 0xff] + t[z & 0xff] + t[z >> 8 & 0xff] + t[z >> 16 & 0xff] + t[z >> 24 & 0xff];
+                };
 
-                    return self;
-                })();
+                return self;
+            })();
         }
     ]);
 
+    /**
+     * Main Controller
+     */
     app.controller('gotunes.controller.main', [
         '$scope',
         '$rootScope',
@@ -155,12 +175,13 @@
         '$window',
         '$mdDialog',
         '$localStorage',
+        '$keybindings',
         'ngIdle',
         'gotunes.service',
         'gotunes.default.settings',
         'themes',
         'SVGs',
-        function ($scope, $rootScope, $timeout, $location, $document, $window, $mdDialog, $localStorage, ngIdle, gotunes, defaults, themes, svg) {
+        function ($scope, $rootScope, $timeout, $location, $document, $window, $mdDialog, $localStorage, $keybindings, ngIdle, gotunes, defaults, themes, svg) {
             const enums = window.enums || {};
             const Command = enums.Command || {};
             const PlayState = $scope.ps = enums.PlayState || {};
@@ -171,7 +192,7 @@
             let domSlider;
 
             $scope.themes = themes;
-            $scope.settings = $localStorage.load('gotunes.settings') || defaults;
+            $scope.settings = angular.merge({}, defaults, $localStorage.load('gotunes.settings'));
             if ($scope.settings.theme.id === 0) $scope.settings.theme = themes[0]; // hack to populate settings dropdown
             $scope.disableAllTracks = $scope.settings.disabledNav.includes(ViewType.ALL_TRACKS);
             $scope.disableAllAlbums = $scope.settings.disabledNav.includes(ViewType.ALL_ALBUMS);
@@ -226,6 +247,7 @@
                 $scope.disableAllTracks = nv.disabledNav.includes(ViewType.ALL_TRACKS);
                 $scope.disableAllAlbums = nv.disabledNav.includes(ViewType.ALL_ALBUMS);
                 $scope.disableAllArtists = nv.disabledNav.includes(ViewType.ALL_ARTISTS);
+                // TODO: update keybindings
             }, true);
 
             $scope.$on('ngIdle', function () {
@@ -276,10 +298,6 @@
                 gotunes.sendCommand(Command.LOAD_PLAYLIST, name);
             };
 
-            $scope.openQueueMenu = function (track) {
-                console.log('TODO');
-            };
-
             $scope.savePlaylist = function () {
                 $mdDialog.show(
                     $mdDialog.prompt()
@@ -299,6 +317,28 @@
             $scope.openSettings = function () {
                 $scope.view.type = ViewType.SETTINGS;
             };
+
+            let kbFuncGen = function (fn) {
+                return function (evt) {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    fn();
+                    return false;
+                };
+            };
+
+            // setup keybind functions
+            $scope.settings.keybindings.next.func = kbFuncGen(angular.bind(null, gotunes.sendCommand, Command.PLAY_NEXT));
+            $scope.settings.keybindings.prev.func = kbFuncGen(angular.bind(null, gotunes.sendCommand, Command.PLAY_PREV));
+            $scope.settings.keybindings.pause.func = kbFuncGen(function () {
+                gotunes.sendCommand(Command.SET_PLAYSTATE,
+                    $scope.nowplaying.playstate === PlayState.PLAYING ? PlayState.PAUSED : PlayState.PLAYING);
+            });
+
+            // register keybindings, if they exists (have been previously saved)
+            Object.keys($scope.settings.keybindings).forEach(function (kb) {
+                if (kb.keys) $keybindings.keybind(kb.keys, kb.func);
+            });
 
             // TODO: slider doesn't work very well...need to fix it
             domSlider = $document[0].getElementById('slider');

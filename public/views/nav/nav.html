@@ -60,14 +60,15 @@
         <div id="nav-view-content" flex>
             <!-- queue view -->
             <div ng-if="view.type === vt.QUEUE" class="content-view">
-                <div ng-if="view.data.length" quick-ng-repeat="t in view.data track by t.file" quick-repeat-list="queueItems"
-                     layout="row" class="list-item" ng-long-press="openQueueMenu(t)" ng-class="{playing: t.file === nowplaying.track.file, even: $even}"
-                     short-press="playInPosition($index)">
-                    <div flex class="collapsible">
-                        <i ng-if="t.file === nowplaying.track.file" class="playing-icon fa fa-fw fa-play"></i>{{t.Title}}
+                <div ng-if="view.data.length" quick-ng-repeat="t in view.data track by t.file" quick-repeat-list="queueItems" class="list-item-container">
+                    <div layout="row" class="list-item" ng-class="{playing: t.file === nowplaying.track.file, even: $even}" ng-long-press="openQueueMenu(t)"
+                         short-press="playInPosition($index)">
+                        <div flex class="collapsible">
+                            <i ng-if="t.file === nowplaying.track.file" class="playing-icon fa fa-fw fa-play"></i>{{t.Title}}
+                        </div>
+                        <div flex class="collapsible">{{t.Artist}}</div>
+                        <div class="collapsible">{{t.Time | trackTime}}</div>
                     </div>
-                    <div flex class="collapsible">{{t.Artist}}</div>
-                    <div class="collapsible">{{t.Time | trackTime}}</div>
                 </div>
                 <div ng-if="!view.data.length" layout="column" layout-align="center center">
                     <p class="placeholder">Queue is empty</p>
@@ -80,8 +81,10 @@
                     <div layout="row" class="list-item" ng-class="{even: $even}" ng-long-press="openItemMenu(artist)" short-press="test2($event)">
                         <div flex class="collapsible">{{artist}}</div>
                     </div>
-                    <div class="view-item-menu" ng-if="selected === artist" layout="row">
-                        <i class="fa fa-fw fa-2x fa-plus clickable"></i>
+                    <div class="view-item-menu" ng-if="selected === artist" layout="row" layout-align="start center">
+                        <div class="view-item-menu-controls" layout="row" layout-align="space-around center" layout-align-gt-sm="start center" flex>
+                            <i class="fa fa-fw fa-2x fa-plus clickable"></i>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -89,8 +92,13 @@
             <!-- album view -->
             <div ng-if="view.type === vt.ALL_ALBUMS" class="content-view">
                 <div quick-ng-repeat="album in view.data" quick-repeat-list="albumItems" class="list-item-container">
-                    <div layout="row" class="list-item" ng-class="{sel: selected === album, even: $even}">
+                    <div layout="row" class="list-item" ng-class="{sel: selected === album, even: $even}" ng-long-press="openItemMenu(album)" short-press="test2($event)">
                         <div flex class="collapsible">{{album}}</div>
+                    </div>
+                    <div class="view-item-menu" ng-if="selected === album" layout="row" layout-align="start center">
+                        <div class="view-item-menu-controls" layout="row" layout-align="space-around center" layout-align-gt-sm="start center" flex>
+                            <i class="fa fa-fw fa-2x fa-plus clickable"></i>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -109,7 +117,7 @@
                     <div class="view-item-menu" ng-if="selected === t" layout="row" layout-align="start center">
                         <div class="view-item-menu-controls" layout="row" layout-align="space-around center" layout-align-gt-sm="start center" flex>
                             <i ng-click="test($event)" class="fa fa-fw fa-2x fa-play clickable"></i>
-                            <i class="fa fa-fw fa-2x fa-plus clickable"></i>
+                            <i ng-click="addToPlaylist(t)" class="fa fa-fw fa-2x fa-plus clickable"></i>
                         </div>
                     </div>
                 </div>
@@ -117,42 +125,54 @@
 
             <!-- playlist view -->
             <div ng-if="view.type === vt.PLAYLIST" class="content-view">
-                <div quick-ng-repeat="playlist in view.data" quick-repeat-list="playlistItems" layout="row" class="list-item" ng-class="{even: $even}"
-                     ng-click="loadPlaylist(playlist.playlist)">
-                    <div flex class="collapsible">{{playlist.playlist}}</div>
+                <div quick-ng-repeat="playlist in view.data" quick-repeat-list="playlistItems" class="list-item-container">
+                    <div layout="row" class="list-item" ng-class="{sel: selected === playlist, even: $even}" ng-click="openItemMenu(playlist)">
+                        <div flex class="collapsible">{{playlist.playlist}}</div>
+                    </div>
+                    <div class="view-item-menu" ng-if="selected === playlist" layout="row" layout-align="start center">
+                        <div class="view-item-menu-controls" layout="row" layout-align="space-around center" layout-align-gt-sm="start center" flex>
+                            <i ng-click="loadPlaylist(playlist)" class="fa fa-fw fa-2x fa-play clickable"></i>
+                            <i ng-click="deletePlaylist(playlist)" class="fa fa-fw fa-2x fa-trash clickable"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- settings view -->
-            <div ng-if="view.type === vt.SETTINGS" class="content-view settings-view">
-                <settings-entry settings-label="Theme">
-                    <md-select ng-model="settings.theme" ng-model-options="{trackBy: '$value.id'}" class="md-no-underline" aria-label="theme">
-                        <md-option ng-repeat="t in themes" ng-value="t">{{t.name}}</md-option>
-                    </md-select>
-                </settings-entry>
+            <div ng-if="view.type === vt.SETTINGS" class="content-view">
+                <div class="settings-view">
+                    <settings-entry settings-label="Theme">
+                        <md-select ng-model="settings.theme" ng-model-options="{trackBy: '$value.id'}" class="md-no-underline" aria-label="theme">
+                            <md-option ng-repeat="t in themes" ng-value="t">{{t.name}}</md-option>
+                        </md-select>
+                    </settings-entry>
 
-                <settings-entry settings-label="Disabled Views">
-                    <md-select ng-model="settings.disabledNav" class="md-no-underline" aria-label="disabled nav" multiple>
-                        <md-option ng-value="vt.ALL_ARTISTS">Artists</md-option>
-                        <md-option ng-value="vt.ALL_ALBUMS">Albums</md-option>
-                        <md-option ng-value="vt.ALL_TRACKS">Tracks</md-option>
-                    </md-select>
-                </settings-entry>
+                    <settings-entry settings-label="Disabled Views">
+                        <md-select ng-model="settings.disabledNav" class="md-no-underline" aria-label="disabled nav" multiple>
+                            <md-option ng-value="vt.ALL_ARTISTS">Artists</md-option>
+                            <md-option ng-value="vt.ALL_ALBUMS">Albums</md-option>
+                            <md-option ng-value="vt.ALL_TRACKS">Tracks</md-option>
+                        </md-select>
+                    </settings-entry>
 
-                <settings-entry settings-label="Idle View Enabled">
-                    <md-checkbox ng-model="settings.idleEnabled" aria-label="idle enabled"></md-checkbox>
-                </settings-entry>
+                    <settings-entry settings-label="Idle View Enabled">
+                        <md-checkbox ng-model="settings.idleEnabled" aria-label="idle enabled"></md-checkbox>
+                    </settings-entry>
 
-                <settings-entry settings-label="Idle Delay (seconds)">
-                    <md-input-container class="md-block">
-                        <input ng-disabled="!settings.idleEnabled" type="number" title="idle delay"
-                               ng-model="settings.idleDelay" step="5" min="5" max="3600" aria-label="idle delay">
-                    </md-input-container>
-                </settings-entry>
+                    <settings-entry settings-label="Idle Delay (seconds)">
+                        <md-input-container class="md-block">
+                            <input ng-disabled="!settings.idleEnabled" type="number" title="idle delay"
+                                   ng-model="settings.idleDelay" step="5" min="5" max="3600" aria-label="idle delay">
+                        </md-input-container>
+                    </settings-entry>
 
-                <settings-entry settings-label="Dynamic Title Enabled">
-                    <md-checkbox ng-model="settings.dynamicTitle" aria-label="dynamic title enabled"></md-checkbox>
-                </settings-entry>
+                    <settings-entry settings-label="Dynamic Title Enabled">
+                        <md-checkbox ng-model="settings.dynamicTitle" aria-label="dynamic title enabled"></md-checkbox>
+                    </settings-entry>
+                </div>
+                <div class="settings-view">
+                    <key-capture key-model="testcap"></key-capture>
+                </div>
             </div>
 
             <div class="list-item-spacer"></div>

@@ -54,6 +54,8 @@
                 console.log('open item menu');
                 $scope.selected === item ? delete $scope.selected : $scope.selected = item;
             };
+
+            $scope.testcap = {};
         }
     ]);
 })(window.angular);

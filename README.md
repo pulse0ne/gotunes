@@ -37,3 +37,15 @@ On the settings page, the following options are available:
 * Idle View Enabled - enables/disables the idle view
 * Idle Delay - number of seconds of inactivity until the idle view is triggered
 * Dynamic Title Enabled - enables/disables the dynamic title (putting title/artist in browser title)
+
+## Theming
+Theming is as easy as creating a new stylesheet and editing the `app.js` file to point to it. You can use the existing theme files as a template.
+Look for this in `app.js`:
+```javascript
+app.constant('themes', [
+    { id: 0, name: 'Default', url: 'assets/css/theme-default.css' },
+    { id: 1, name: 'Odin', url: 'assets/css/theme-odin.css' },
+    { id: 2, name: 'Aether', url: 'assets/css/theme-aether.css' }
+    // your theme here, with a unique id
+]);
+```
